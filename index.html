@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Control de Gastos y Cuentas</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--blue:#2563eb;--green:#16a34a;--red:#dc2626;--amber:#d97706;--navy:#111827}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.app{max-width:1280px;margin:auto;padding:18px}.hero{background:linear-gradient(135deg,#111827,#1f2937 55%,#2563eb);color:#fff;padding:25px;border-radius:25px;box-shadow:0 14px 40px rgba(17,24,39,.14)}
+.hero h1{margin:0 0 7px;font-size:clamp(26px,4vw,40px)}.hero p{margin:0;color:#dbeafe}.toolbar{display:flex;gap:9px;flex-wrap:wrap;margin-top:17px}
+button,.filelabel{border:0;border-radius:12px;padding:11px 14px;font-weight:800;cursor:pointer;display:inline-flex;gap:7px;align-items:center;font:inherit;text-decoration:none}
+.white{background:#fff;color:#111827}.blue{background:#2563eb;color:#fff}.soft{background:#eef2ff;color:#1e3a8a}.green{background:#dcfce7;color:#166534}.red{background:#fee2e2;color:#991b1b}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:15px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:17px;box-shadow:0 8px 26px rgba(17,24,39,.06)}
+.stat small{display:block;color:var(--muted);font-weight:800;margin-bottom:7px}.stat strong{font-size:24px}.stat .note{font-size:12px;color:var(--muted);margin-top:5px}
+.main{display:grid;grid-template-columns:1.45fr .75fr;gap:15px;margin-top:15px}.section{margin-top:15px}h2{font-size:19px;margin:0 0 13px}
+.filters{display:grid;grid-template-columns:1.2fr .8fr .8fr;gap:9px;margin-bottom:11px}input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:11px;padding:10px 11px;font:inherit;background:#fff}
+input:focus,select:focus,textarea:focus{outline:0;border-color:#60a5fa;box-shadow:0 0 0 3px #dbeafe}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:13px}
+table{border-collapse:collapse;width:100%;min-width:760px}th,td{padding:10px 11px;border-bottom:1px solid var(--line);font-size:13px;text-align:left}th{background:#f9fafb;color:#4b5563;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+tr:last-child td{border-bottom:0}.badge{display:inline-flex;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:900}.paid{background:#dcfce7;color:#166534}.pending{background:#fef3c7;color:#92400e}.overdue{background:#fee2e2;color:#991b1b}
+.income{background:#dcfce7;color:#166534}.expense{background:#fee2e2;color:#991b1b}.account{background:#e0e7ff;color:#3730a3}
+.rowbuttons{display:flex;gap:5px;flex-wrap:wrap}.mini{padding:6px 8px;border-radius:8px;font-size:11px}.muted{color:var(--muted)}.empty{text-align:center;color:var(--muted);padding:23px}
+.progress{height:11px;background:#e5e7eb;border-radius:999px;overflow:hidden}.progress span{height:100%;display:block;background:#2563eb}.summaryline{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}.summaryline:last-child{border-bottom:0}
+.fixedlist{display:flex;flex-direction:column;gap:8px}.fixedrow{border:1px solid var(--line);border-radius:13px;padding:10px;display:grid;grid-template-columns:1fr auto;gap:7px;align-items:center}.fixedrow small{color:var(--muted)}.fixedrow .amt{font-weight:900}
+.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.field{display:flex;flex-direction:column;gap:5px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:800;color:#374151}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+dialog{border:0;border-radius:18px;padding:0;width:min(590px,calc(100% - 22px));box-shadow:0 30px 80px rgba(0,0,0,.28)}dialog::backdrop{background:rgba(17,24,39,.55)}.modal{padding:19px}.modalhead{display:flex;justify-content:space-between;align-items:center}.x{padding:7px 10px;background:#f3f4f6}
+.tabs{display:flex;gap:8px;margin:15px 0 0}.tab{background:#e5e7eb;color:#374151}.tab.active{background:#111827;color:#fff}.hidden{display:none!important}.foot{text-align:center;color:var(--muted);font-size:12px;padding:20px 0}
+@media(max-width:1050px){.stats{grid-template-columns:repeat(3,1fr)}.main{grid-template-columns:1fr}}@media(max-width:650px){.app{padding:10px}.hero{padding:18px;border-radius:18px}.stats{grid-template-columns:1fr 1fr}.filters,.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}.toolbar button,.toolbar .filelabel{flex:1;justify-content:center}.stats .card:last-child{grid-column:1/-1}}
+</style>
+
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mis Gastos">
+<meta name="format-detection" content="telephone=no">
+
+</head>
+<body>
+<div class="app">
+  <section class="hero">
+    <h1>💰 Control de Gastos y Cuentas</h1>
+    <p>Tus gastos mensuales, pagos, extras e ingresos en un solo lugar.</p>
+    <div class="toolbar">
+      <button class="white" id="newMove">＋ Nuevo movimiento</button>
+      <button class="soft" id="generateMonth">↻ Generar gastos del mes</button>
+      <button class="soft" id="csvBtn">⬇ Exportar CSV</button>
+      <button class="soft" id="backupBtn">💾 Copia de seguridad</button>
+      <label class="filelabel soft">📂 Restaurar<input id="restore" type="file" accept=".json" hidden></label>
+    </div>
+  </section>
+
+  <div class="stats">
+    <div class="card stat"><small>Gastos fijos mensuales</small><strong id="fixedTotal">$ 0</strong><div class="note">Según tu lista de Excel</div></div>
+    <div class="card stat"><small>Pagado este mes</small><strong id="paidTotal">$ 0</strong><div class="note" id="paidCount">0 pagos</div></div>
+    <div class="card stat"><small>Pendiente este mes</small><strong id="pendingTotal">$ 0</strong><div class="note" id="pendingCount">0 cuentas</div></div>
+    <div class="card stat"><small>Gastos extras</small><strong id="extraTotal">$ 0</strong><div class="note">Fuera de los gastos fijos</div></div>
+    <div class="card stat"><small>Saldo del mes</small><strong id="balance">$ 0</strong><div class="note">Ingresos menos gastos pagados</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="month">Mes actual</button>
+    <button class="tab" data-tab="fixed">Gastos fijos</button>
+  </div>
+
+  <section id="monthPanel" class="main">
+    <div class="card">
+      <h2>📋 Movimientos del mes</h2>
+      <div class="filters">
+        <input id="search" placeholder="Buscar...">
+        <select id="monthFilter"></select>
+        <select id="typeFilter">
+          <option value="">Todos</option>
+          <option value="cuenta">Cuentas fijas</option>
+          <option value="gasto">Gastos extras</option>
+          <option value="ingreso">Ingresos</option>
+        </select>
+      </div>
+      <div class="tablewrap" id="tablewrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Concepto</th><th>Categoría</th><th>Importe</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div id="empty" class="empty hidden">No hay movimientos para este filtro.</div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>📊 Avance de pagos</h2>
+        <div class="progress"><span id="paybar" style="width:0%"></span></div>
+        <p class="muted" id="progressText" style="font-size:13px"></p>
+        <div id="categorySummary"></div>
+      </div>
+      <div class="card section">
+        <h2>⏰ Pendientes</h2>
+        <div id="pendingList"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="fixedPanel" class="hidden section">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+        <div><h2 style="margin-bottom:4px">🔁 Gastos fijos mensuales</h2><div class="muted" style="font-size:13px">Podés cambiar monto, categoría y día de vencimiento.</div></div>
+        <button class="blue" id="newFixed">＋ Agregar gasto fijo</button>
+      </div>
+      <div class="tablewrap section">
+        <table>
+          <thead><tr><th>Concepto</th><th>Categoría</th><th>Monto</th><th>Día de vencimiento</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody id="fixedBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">“Gastos extras” se carga aparte y no tiene un monto fijo predefinido.</div>
+</div>
+
+<dialog id="moveDialog">
+<div class="modal">
+  <div class="modalhead"><h2 id="moveTitle">Nuevo movimiento</h2><button class="x" type="button" onclick="moveDialog.close()">✕</button></div>
+  <form id="moveForm">
+    <input type="hidden" id="moveId">
+    <div class="formgrid">
+      <div class="field"><label>Tipo</label><select id="moveType"><option value="gasto">Gasto extra</option><option value="ingreso">Ingreso</option><option value="cuenta">Cuenta</option></select></div>
+      <div class="field"><label>Fecha</label><input id="moveDate" type="date" required></div>
+      <div class="field full"><label>Concepto</label><input id="moveName" required placeholder="Ej.: combustible, comida, sueldo..."></div>
+      <div class="field"><label>Categoría</label><input id="moveCategory" value="Gastos extras"></div>
+      <div class="field"><label>Importe</label><input id="moveAmount" type="number" min="0" step="0.01" required></div>
+      <div class="field" id="moveStatusField"><label>Estado</label><select id="moveStatus"><option value="pagado">Pagado</option><option value="pendiente">Pendiente</option></select></div>
+      <div class="field"><label>Vencimiento (opcional)</label><input id="moveDue" type="date"></div>
+      <div class="field full"><label>Notas</label><textarea id="moveNotes" rows="2"></textarea></div>
+    </div>
+    <div class="actions"><button class="blue" type="submit">Guardar</button><button class="white" type="button" onclick="moveDialog.close()">Cancelar</button></div>
+  </form>
+</div>
+</dialog>
+
+<dialog id="fixedDialog">
+<div class="modal">
+  <div class="modalhead"><h2 id="fixedTitle">Editar gasto fijo</h2><button class="x" type="button" onclick="fixedDialog.close()">✕</button></div>
+  <form id="fixedForm">
+    <input type="hidden" id="fixedId">
+    <div class="formgrid">
+      <div class="field full"><label>Concepto</label><input id="fixedName" required></div>
+      <div class="field"><label>Categoría</label><input id="fixedCategory" required></div>
+      <div class="field"><label>Monto mensual</label><input id="fixedAmount" type="number" min="0" step="0.01" required></div>
+      <div class="field"><label>Día de vencimiento</label><input id="fixedDueDay" type="number" min="1" max="31" placeholder="Ej.: 10"></div>
+      <div class="field"><label>Activo</label><select id="fixedActive"><option value="true">Sí</option><option value="false">No</option></select></div>
+    </div>
+    <div class="actions"><button class="blue" type="submit">Guardar</button><button class="white" type="button" onclick="fixedDialog.close()">Cancelar</button></div>
+  </form>
+</div>
+</dialog>
+
+<script>
+const ORIGINAL_FIXED = [{"id": "f1", "name": "DISNEY", "amount": 12000, "category": "Streaming", "dueDay": "", "active": true}, {"id": "f2", "name": "NETFLIX", "amount": 15000, "category": "Streaming", "dueDay": "", "active": true}, {"id": "f3", "name": "SPOTIFY", "amount": 6800, "category": "Streaming", "dueDay": "", "active": true}, {"id": "f4", "name": "PRENSA", "amount": 10000, "category": "Suscripciones", "dueDay": "", "active": true}, {"id": "f5", "name": "SEGURO AUGUSTO", "amount": 70000, "category": "Seguros", "dueDay": "", "active": true}, {"id": "f6", "name": "SEGURO SILVIA", "amount": 75000, "category": "Seguros", "dueDay": "", "active": true}, {"id": "f7", "name": "SEGURO ABUELO", "amount": 35000, "category": "Seguros", "dueDay": "", "active": true}, {"id": "f8", "name": "FLOW + PERSONAL", "amount": 73000, "category": "Internet y telefonía", "dueDay": "", "active": true}, {"id": "f9", "name": "SAT AGUA MORENO", "amount": 30000, "category": "Servicios", "dueDay": "", "active": true}, {"id": "f10", "name": "FUTBOL", "amount": 20000, "category": "Deportes", "dueDay": "", "active": true}, {"id": "f11", "name": "CHATGPT", "amount": 31000, "category": "Suscripciones", "dueDay": "", "active": true}, {"id": "f12", "name": "GOOGLE DRIVE", "amount": 7700, "category": "Suscripciones", "dueDay": "", "active": true}, {"id": "f13", "name": "RENTAS", "amount": 3000, "category": "Impuestos", "dueDay": "", "active": true}, {"id": "f14", "name": "C.I.S.I", "amount": 3000, "category": "Impuestos", "dueDay": "", "active": true}, {"id": "f15", "name": "PATENTE", "amount": 17000, "category": "Impuestos", "dueDay": "", "active": true}, {"id": "f16", "name": "FACULTAD", "amount": 109000, "category": "Educación", "dueDay": "", "active": true}];
+const FIXED_KEY='control_gastos_fixed_v2', MOVE_KEY='control_gastos_moves_v2';
+let fixed=JSON.parse(localStorage.getItem(FIXED_KEY)||'null') || ORIGINAL_FIXED;
+let moves=JSON.parse(localStorage.getItem(MOVE_KEY)||'[]');
+
+const $=id=>document.getElementById(id);
+const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:2}).format(Number(n||0));
+const today=()=>new Date().toISOString().slice(0,10);
+const currentMonth=()=>today().slice(0,7);
+const monthOf=d=>(d||'').slice(0,7);
+const uid=()=>crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random());
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+function monthLabel(m){const [y,mo]=m.split('-').map(Number);return new Intl.DateTimeFormat('es-AR',{month:'long',year:'numeric'}).format(new Date(y,mo-1,1))}
+function persist(){localStorage.setItem(FIXED_KEY,JSON.stringify(fixed));localStorage.setItem(MOVE_KEY,JSON.stringify(moves));render()}
+function dueDateFor(month,day){if(!day)return '';const [y,m]=month.split('-').map(Number);const max=new Date(y,m,0).getDate();return `${y}-${String(m).padStart(2,'0')}-${String(Math.min(day,max)).padStart(2,'0')}`}
+function statusOf(x){if(x.status==='pagado'||x.type==='ingreso')return 'pagado';if(x.dueDate&&x.dueDate<today())return 'vencido';return 'pendiente'}
+function generatedKey(fixedId,month){return `${fixedId}_${month}`}
+
+function generateMonth(month=currentMonth(),silent=false){
+  let added=0;
+  fixed.filter(x=>x.active).forEach(f=>{
+    if(!moves.some(m=>m.recurringKey===generatedKey(f.id,month))){
+      moves.push({id:uid(),type:'cuenta',date:`${month}-01`,name:f.name,category:f.category,amount:Number(f.amount),status:'pendiente',dueDate:dueDateFor(month,f.dueDay),notes:'Gasto fijo mensual',fixedId:f.id,recurringKey:generatedKey(f.id,month)});
+      added++;
+    }
+  });
+  localStorage.setItem(MOVE_KEY,JSON.stringify(moves));
+  if(!silent) alert(added?`Se agregaron ${added} cuentas al mes seleccionado.`:'Ese mes ya tiene cargados los gastos fijos.');
+  render();
+}
+if(!localStorage.getItem('control_gastos_initialized_v2')){generateMonth(currentMonth(),true);localStorage.setItem('control_gastos_initialized_v2','1')}
+
+function buildMonthFilter(){
+  const months=[...new Set([currentMonth(),...moves.map(x=>monthOf(x.date)).filter(Boolean)])].sort().reverse();
+  const prev=$('monthFilter').value;
+  $('monthFilter').innerHTML=months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+  $('monthFilter').value=months.includes(prev)?prev:currentMonth();
+}
+function selectedMonth(){return $('monthFilter').value||currentMonth()}
+
+function render(){
+  buildMonthFilter();
+  const m=selectedMonth(), monthMoves=moves.filter(x=>monthOf(x.date)===m);
+  const activeFixed=fixed.filter(x=>x.active);
+  const fixedTotal=activeFixed.reduce((s,x)=>s+Number(x.amount),0);
+  const paid=monthMoves.filter(x=>(x.type==='gasto'||x.type==='cuenta')&&x.status==='pagado').reduce((s,x)=>s+Number(x.amount),0);
+  const pending=monthMoves.filter(x=>x.type==='cuenta'&&x.status!=='pagado').reduce((s,x)=>s+Number(x.amount),0);
+  const extras=monthMoves.filter(x=>x.type==='gasto').reduce((s,x)=>s+Number(x.amount),0);
+  const incomes=monthMoves.filter(x=>x.type==='ingreso').reduce((s,x)=>s+Number(x.amount),0);
+  $('fixedTotal').textContent=money(fixedTotal);$('paidTotal').textContent=money(paid);$('pendingTotal').textContent=money(pending);$('extraTotal').textContent=money(extras);$('balance').textContent=money(incomes-paid);
+  $('paidCount').textContent=`${monthMoves.filter(x=>(x.type==='cuenta'||x.type==='gasto')&&x.status==='pagado').length} pagos`;
+  $('pendingCount').textContent=`${monthMoves.filter(x=>x.type==='cuenta'&&x.status!=='pagado').length} cuentas`;
+  const fixedMonth=monthMoves.filter(x=>x.type==='cuenta');const paidFixed=fixedMonth.filter(x=>x.status==='pagado').reduce((s,x)=>s+Number(x.amount),0);const totalFixed=fixedMonth.reduce((s,x)=>s+Number(x.amount),0);
+  const pct=totalFixed?Math.round(paidFixed/totalFixed*100):0;$('paybar').style.width=Math.min(100,pct)+'%';$('progressText').textContent=`${pct}% de las cuentas fijas del mes están pagadas.`;
+  renderMoves();renderPending();renderCategories();renderFixed();
+}
+function renderMoves(){
+  const q=$('search').value.toLowerCase().trim(),m=selectedMonth(),type=$('typeFilter').value;
+  const rows=moves.filter(x=>monthOf(x.date)===m&&(!type||x.type===type)&&(!q||(x.name+' '+x.category+' '+(x.notes||'')).toLowerCase().includes(q))).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  $('tbody').innerHTML=rows.map(x=>{
+    const st=statusOf(x);const state=x.type==='ingreso'?'—':`<span class="badge ${st==='pagado'?'paid':st==='vencido'?'overdue':'pending'}">${st}</span>`;
+    return `<tr><td>${esc(x.date)}</td><td><strong>${esc(x.name)}</strong>${x.dueDate?`<br><small class="muted">Vence ${esc(x.dueDate)}</small>`:''}</td><td>${esc(x.category)}</td><td><strong>${money(x.amount)}</strong></td><td>${state}</td><td><div class="rowbuttons">${x.type==='cuenta'&&x.status!=='pagado'?`<button class="mini green" onclick="pay('${x.id}')">✓ Pagar</button>`:''}<button class="mini soft" onclick="editMove('${x.id}')">Editar</button><button class="mini red" onclick="delMove('${x.id}')">Eliminar</button></div></td></tr>`
+  }).join('');
+  $('empty').classList.toggle('hidden',rows.length>0);$('tablewrap').classList.toggle('hidden',rows.length===0);
+}
+function renderPending(){
+  const rows=moves.filter(x=>monthOf(x.date)===selectedMonth()&&x.type==='cuenta'&&x.status!=='pagado').sort((a,b)=>(a.dueDate||'9999').localeCompare(b.dueDate||'9999'));
+  $('pendingList').innerHTML=rows.length?rows.map(x=>`<div class="summaryline"><span><strong>${esc(x.name)}</strong><br><small class="muted">${x.dueDate?'Vence '+esc(x.dueDate):'Sin vencimiento cargado'}</small></span><strong>${money(x.amount)}</strong></div>`).join(''):'<div class="empty">Todo pagado 🎉</div>';
+}
+function renderCategories(){
+  const map={};moves.filter(x=>monthOf(x.date)===selectedMonth()&&(x.type==='gasto'||(x.type==='cuenta'&&x.status==='pagado'))).forEach(x=>map[x.category]=(map[x.category]||0)+Number(x.amount));
+  const arr=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  $('categorySummary').innerHTML=arr.length?'<div style="margin-top:10px">'+arr.map(([k,v])=>`<div class="summaryline"><span>${esc(k)}</span><strong>${money(v)}</strong></div>`).join('')+'</div>':'<div class="empty">Todavía no hay pagos.</div>';
+}
+function renderFixed(){
+  $('fixedBody').innerHTML=fixed.map(f=>`<tr><td><strong>${esc(f.name)}</strong></td><td>${esc(f.category)}</td><td><strong>${money(f.amount)}</strong></td><td>${f.dueDay||'—'}</td><td><span class="badge ${f.active?'paid':'pending'}">${f.active?'Activo':'Pausado'}</span></td><td><div class="rowbuttons"><button class="mini soft" onclick="editFixed('${f.id}')">Editar</button><button class="mini red" onclick="deleteFixed('${f.id}')">Eliminar</button></div></td></tr>`).join('');
+}
+function pay(id){const x=moves.find(x=>x.id===id);if(x){x.status='pagado';persist()}}
+function delMove(id){if(confirm('¿Eliminar este movimiento?')){moves=moves.filter(x=>x.id!==id);persist()}}
+function deleteFixed(id){if(confirm('¿Eliminar este gasto fijo? Los movimientos ya generados no se borrarán.')){fixed=fixed.filter(x=>x.id!==id);persist()}}
+function editMove(id){
+  const x=moves.find(x=>x.id===id);if(!x)return;
+  $('moveId').value=x.id;$('moveType').value=x.type;$('moveDate').value=x.date;$('moveName').value=x.name;$('moveCategory').value=x.category;$('moveAmount').value=x.amount;$('moveStatus').value=x.status||'pagado';$('moveDue').value=x.dueDate||'';$('moveNotes').value=x.notes||'';$('moveTitle').textContent='Editar movimiento';syncMoveFields();moveDialog.showModal();
+}
+function newMove(){
+  $('moveForm').reset();$('moveId').value='';$('moveType').value='gasto';$('moveDate').value=today();$('moveCategory').value='Gastos extras';$('moveStatus').value='pagado';$('moveTitle').textContent='Nuevo movimiento';syncMoveFields();moveDialog.showModal();
+}
+function syncMoveFields(){$('moveStatusField').classList.toggle('hidden',$('moveType').value==='ingreso')}
+$('moveForm').addEventListener('submit',e=>{e.preventDefault();const id=$('moveId').value||uid();const old=moves.find(x=>x.id===id)||{};const obj={...old,id,type:$('moveType').value,date:$('moveDate').value,name:$('moveName').value.trim(),category:$('moveCategory').value.trim()||'Otros',amount:Number($('moveAmount').value),status:$('moveType').value==='ingreso'?'pagado':$('moveStatus').value,dueDate:$('moveDue').value,notes:$('moveNotes').value.trim()};const i=moves.findIndex(x=>x.id===id);if(i>=0)moves[i]=obj;else moves.push(obj);moveDialog.close();persist()});
+function editFixed(id){const f=fixed.find(x=>x.id===id);if(!f)return;$('fixedId').value=f.id;$('fixedName').value=f.name;$('fixedCategory').value=f.category;$('fixedAmount').value=f.amount;$('fixedDueDay').value=f.dueDay||'';$('fixedActive').value=String(f.active);$('fixedTitle').textContent='Editar gasto fijo';fixedDialog.showModal()}
+function newFixed(){$('fixedForm').reset();$('fixedId').value='';$('fixedActive').value='true';$('fixedTitle').textContent='Nuevo gasto fijo';fixedDialog.showModal()}
+$('fixedForm').addEventListener('submit',e=>{e.preventDefault();const id=$('fixedId').value||uid();const obj={id,name:$('fixedName').value.trim(),category:$('fixedCategory').value.trim(),amount:Number($('fixedAmount').value),dueDay:$('fixedDueDay').value?Number($('fixedDueDay').value):'',active:$('fixedActive').value==='true'};const i=fixed.findIndex(x=>x.id===id);if(i>=0)fixed[i]=obj;else fixed.push(obj);fixedDialog.close();persist()});
+
+$('newMove').onclick=newMove;$('newFixed').onclick=newFixed;$('moveType').onchange=syncMoveFields;$('search').oninput=renderMoves;$('typeFilter').onchange=renderMoves;$('monthFilter').onchange=render;
+$('generateMonth').onclick=()=>generateMonth(selectedMonth());
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('monthPanel').classList.toggle('hidden',b.dataset.tab!=='month');$('fixedPanel').classList.toggle('hidden',b.dataset.tab!=='fixed')});
+
+function download(content,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+$('csvBtn').onclick=()=>{const rows=[['Fecha','Concepto','Tipo','Categoría','Monto','Estado','Vencimiento','Notas'],...moves.map(x=>[x.date,x.name,x.type,x.category,x.amount,statusOf(x),x.dueDate||'',x.notes||''])];const csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(';')).join('\n');download(csv,'control-gastos.csv','text/csv;charset=utf-8')};
+$('backupBtn').onclick=()=>download(JSON.stringify({fixed,moves,createdAt:new Date().toISOString()},null,2),'copia-control-gastos.json','application/json');
+$('restore').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.fixed)||!Array.isArray(d.moves))throw 0;if(confirm('¿Reemplazar los datos actuales con esta copia?')){fixed=d.fixed;moves=d.moves;persist()}}catch{alert('La copia no tiene un formato válido.')}e.target.value=''};
+render();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+
+</body>
+</html>
