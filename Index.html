@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mis Gastos">
+<meta name="theme-color" content="#111827">
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--blue:#2563eb;--green:#16a34a;--red:#dc2626}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.app{max-width:1180px;margin:auto;padding:14px}.hero{background:linear-gradient(135deg,#111827,#1f2937 55%,#2563eb);color:#fff;padding:22px;border-radius:22px}
+h1{margin:0 0 6px;font-size:clamp(26px,5vw,40px)}.hero p{margin:0;color:#dbeafe}.sync{margin-top:14px;display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.13);padding:8px 11px;border-radius:999px;font-size:12px;font-weight:800}
+.dot{width:9px;height:9px;border-radius:50%;background:#f59e0b}.dot.ok{background:#22c55e}.dot.err{background:#ef4444}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.btn,button{border:0;border-radius:11px;padding:10px 13px;font-weight:800;cursor:pointer}.white{background:#fff;color:#111827}.blue{background:#2563eb;color:#fff}.soft{background:#eef2ff;color:#1e3a8a}.green{background:#dcfce7;color:#166534}.red{background:#fee2e2;color:#991b1b}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:13px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px}.stat small{display:block;color:var(--muted);font-weight:800;margin-bottom:7px}.stat strong{font-size:22px}.note{font-size:11px;color:var(--muted);margin-top:5px}
+.layout{display:grid;grid-template-columns:1.4fr .75fr;gap:13px;margin-top:13px}h2{font-size:18px;margin:0 0 12px}.filters{display:grid;grid-template-columns:1.3fr .8fr .8fr;gap:8px;margin-bottom:10px}
+input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:10px;font:inherit}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;min-width:720px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:12px}th{background:#f9fafb;color:#4b5563;font-size:10px;text-transform:uppercase}
+.badge{display:inline-flex;padding:5px 8px;border-radius:999px;font-weight:900;font-size:10px}.paid{background:#dcfce7;color:#166534}.pending{background:#fef3c7;color:#92400e}.overdue{background:#fee2e2;color:#991b1b}
+.rowbuttons{display:flex;gap:4px;flex-wrap:wrap}.mini{padding:6px 7px;border-radius:8px;font-size:10px}.summary{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.summary:last-child{border-bottom:0}.muted{color:var(--muted)}.section{margin-top:13px}
+dialog{border:0;border-radius:17px;padding:0;width:min(560px,calc(100% - 20px));box-shadow:0 30px 80px rgba(0,0,0,.28)}dialog::backdrop{background:rgba(17,24,39,.55)}.modal{padding:18px}.modalhead{display:flex;justify-content:space-between;align-items:center}.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.field{display:flex;flex-direction:column;gap:5px}.full{grid-column:1/-1}.field label{font-size:11px;font-weight:800}.actions{display:flex;gap:8px;margin-top:12px}.hidden{display:none!important}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.stats .card:last-child{grid-column:1/-1}}
+@media(max-width:600px){.app{padding:8px}.hero{border-radius:16px;padding:17px}.filters,.formgrid{grid-template-columns:1fr}.full{grid-column:auto}.toolbar button{flex:1}.stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<section class="hero">
+  <h1>💰 Mis Gastos</h1>
+  <p>Sincronizado con Google Sheets mediante Apps Script.</p>
+  <div class="sync"><span id="syncDot" class="dot"></span><span id="syncText">Conectando…</span></div>
+  <div class="toolbar">
+    <button class="white" onclick="newMove()">＋ Nuevo movimiento</button>
+    <button class="soft" onclick="generateMonth()">↻ Generar gastos del mes</button>
+    <button class="soft" onclick="pull(true)">☁ Actualizar</button>
+  </div>
+</section>
+
+<div class="stats">
+  <div class="card stat"><small>Gastos fijos</small><strong id="fixedTotal">$0</strong><div class="note">Total mensual</div></div>
+  <div class="card stat"><small>Pagado</small><strong id="paidTotal">$0</strong><div class="note" id="paidCount">0 pagos</div></div>
+  <div class="card stat"><small>Pendiente</small><strong id="pendingTotal">$0</strong><div class="note" id="pendingCount">0 cuentas</div></div>
+  <div class="card stat"><small>Gastos extras</small><strong id="extraTotal">$0</strong><div class="note">Del mes seleccionado</div></div>
+  <div class="card stat"><small>Saldo</small><strong id="balance">$0</strong><div class="note">Ingresos − pagado</div></div>
+</div>
+
+<section class="layout">
+<div class="card">
+  <h2>📋 Movimientos</h2>
+  <div class="filters">
+    <input id="search" placeholder="Buscar..." oninput="renderTable()">
+    <select id="monthFilter" onchange="render()"></select>
+    <select id="typeFilter" onchange="renderTable()">
+      <option value="">Todos</option><option value="cuenta">Cuentas fijas</option><option value="gasto">Extras</option><option value="ingreso">Ingresos</option>
+    </select>
+  </div>
+  <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Concepto</th><th>Categoría</th><th>Importe</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="tbody"></tbody></table></div>
+</div>
+<div>
+  <div class="card"><h2>⏰ Pendientes</h2><div id="pendingList"></div></div>
+  <div class="card section"><h2>🔁 Gastos fijos</h2><div id="fixedList"></div></div>
+</div>
+</section>
+</div>
+
+<dialog id="moveDialog"><div class="modal">
+<div class="modalhead"><h2 id="moveTitle">Nuevo movimiento</h2><button onclick="moveDialog.close()">✕</button></div>
+<form id="moveForm">
+<input type="hidden" id="moveId">
+<div class="formgrid">
+<div class="field"><label>Tipo</label><select id="moveType"><option value="gasto">Gasto extra</option><option value="ingreso">Ingreso</option><option value="cuenta">Cuenta</option></select></div>
+<div class="field"><label>Fecha</label><input id="moveDate" type="date" required></div>
+<div class="field full"><label>Concepto</label><input id="moveName" required></div>
+<div class="field"><label>Categoría</label><input id="moveCategory" value="Gastos extras"></div>
+<div class="field"><label>Importe</label><input id="moveAmount" type="number" min="0" step="0.01" required></div>
+<div class="field"><label>Estado</label><select id="moveStatus"><option value="pagado">Pagado</option><option value="pendiente">Pendiente</option></select></div>
+<div class="field"><label>Vencimiento</label><input id="moveDue" type="date"></div>
+<div class="field full"><label>Notas</label><textarea id="moveNotes" rows="2"></textarea></div>
+</div>
+<div class="actions"><button type="submit" class="blue">Guardar</button><button type="button" class="white" onclick="moveDialog.close()">Cancelar</button></div>
+</form></div></dialog>
+
+<script>
+const ORIGINAL_FIXED = [{"id": "f1", "name": "DISNEY", "amount": 12000, "category": "Streaming", "dueDay": "", "active": true}, {"id": "f2", "name": "NETFLIX", "amount": 15000, "category": "Streaming", "dueDay": "", "active": true}, {"id": "f3", "name": "SPOTIFY", "amount": 6800, "category": "Streaming", "dueDay": "", "active": true}, {"id": "f4", "name": "PRENSA", "amount": 10000, "category": "Suscripciones", "dueDay": "", "active": true}, {"id": "f5", "name": "SEGURO AUGUSTO", "amount": 70000, "category": "Seguros", "dueDay": "", "active": true}, {"id": "f6", "name": "SEGURO SILVIA", "amount": 75000, "category": "Seguros", "dueDay": "", "active": true}, {"id": "f7", "name": "SEGURO ABUELO", "amount": 35000, "category": "Seguros", "dueDay": "", "active": true}, {"id": "f8", "name": "FLOW + PERSONAL", "amount": 73000, "category": "Internet y telefonía", "dueDay": "", "active": true}, {"id": "f9", "name": "SAT AGUA MORENO", "amount": 30000, "category": "Servicios", "dueDay": "", "active": true}, {"id": "f10", "name": "FUTBOL", "amount": 20000, "category": "Deportes", "dueDay": "", "active": true}, {"id": "f11", "name": "CHATGPT", "amount": 31000, "category": "Suscripciones", "dueDay": "", "active": true}, {"id": "f12", "name": "GOOGLE DRIVE", "amount": 7700, "category": "Suscripciones", "dueDay": "", "active": true}, {"id": "f13", "name": "RENTAS", "amount": 3000, "category": "Impuestos", "dueDay": "", "active": true}, {"id": "f14", "name": "C.I.S.I", "amount": 3000, "category": "Impuestos", "dueDay": "", "active": true}, {"id": "f15", "name": "PATENTE", "amount": 17000, "category": "Impuestos", "dueDay": "", "active": true}, {"id": "f16", "name": "FACULTAD", "amount": 109000, "category": "Educación", "dueDay": "", "active": true}];
+let fixed = ORIGINAL_FIXED;
+let moves = [];
+let lastUpdatedAt = '';
+let busy = false;
+
+const $=id=>document.getElementById(id);
+const today=()=>new Date().toISOString().slice(0,10);
+const monthOf=d=>(d||'').slice(0,7);
+const currentMonth=()=>today().slice(0,7);
+const uid=()=>String(Date.now())+Math.random().toString(16).slice(2);
+const money=n=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:2}).format(Number(n||0));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+function setSync(kind,text){$('syncDot').className='dot'+(kind==='ok'?' ok':kind==='err'?' err':'');$('syncText').textContent=text}
+function monthLabel(m){const [y,mo]=m.split('-').map(Number);return new Intl.DateTimeFormat('es-AR',{month:'long',year:'numeric'}).format(new Date(y,mo-1,1))}
+function dueDateFor(month,day){if(!day)return '';const [y,m]=month.split('-').map(Number),max=new Date(y,m,0).getDate();return `${y}-${String(m).padStart(2,'0')}-${String(Math.min(day,max)).padStart(2,'0')}`}
+function statusOf(x){if(x.status==='pagado'||x.type==='ingreso')return 'pagado';if(x.dueDate&&x.dueDate<today())return 'vencido';return 'pendiente'}
+
+function selectedMonth(){return $('monthFilter').value||currentMonth()}
+function buildMonths(){
+ const months=[...new Set([currentMonth(),...moves.map(x=>monthOf(x.date)).filter(Boolean)])].sort().reverse(),old=$('monthFilter').value;
+ $('monthFilter').innerHTML=months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+ $('monthFilter').value=months.includes(old)?old:currentMonth();
+}
+function render(){
+ buildMonths(); const m=selectedMonth(), mm=moves.filter(x=>monthOf(x.date)===m);
+ const fixedTotal=fixed.filter(x=>x.active).reduce((s,x)=>s+Number(x.amount),0);
+ const paid=mm.filter(x=>(x.type==='gasto'||x.type==='cuenta')&&x.status==='pagado').reduce((s,x)=>s+Number(x.amount),0);
+ const pending=mm.filter(x=>x.type==='cuenta'&&x.status!=='pagado').reduce((s,x)=>s+Number(x.amount),0);
+ const extras=mm.filter(x=>x.type==='gasto').reduce((s,x)=>s+Number(x.amount),0);
+ const incomes=mm.filter(x=>x.type==='ingreso').reduce((s,x)=>s+Number(x.amount),0);
+ $('fixedTotal').textContent=money(fixedTotal);$('paidTotal').textContent=money(paid);$('pendingTotal').textContent=money(pending);$('extraTotal').textContent=money(extras);$('balance').textContent=money(incomes-paid);
+ $('paidCount').textContent=mm.filter(x=>(x.type==='cuenta'||x.type==='gasto')&&x.status==='pagado').length+' pagos';
+ $('pendingCount').textContent=mm.filter(x=>x.type==='cuenta'&&x.status!=='pagado').length+' cuentas';
+ renderTable(); renderPending(); renderFixed();
+}
+function renderTable(){
+ const q=$('search').value.toLowerCase().trim(),type=$('typeFilter').value,m=selectedMonth();
+ const rows=moves.filter(x=>monthOf(x.date)===m&&(!type||x.type===type)&&(!q||(x.name+' '+x.category+' '+(x.notes||'')).toLowerCase().includes(q))).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ $('tbody').innerHTML=rows.map(x=>{const st=statusOf(x);return `<tr><td>${esc(x.date)}</td><td><strong>${esc(x.name)}</strong>${x.dueDate?`<br><small class="muted">Vence ${esc(x.dueDate)}</small>`:''}</td><td>${esc(x.category)}</td><td><strong>${money(x.amount)}</strong></td><td>${x.type==='ingreso'?'—':`<span class="badge ${st==='pagado'?'paid':st==='vencido'?'overdue':'pending'}">${st}</span>`}</td><td><div class="rowbuttons">${x.type==='cuenta'&&x.status!=='pagado'?`<button class="mini green" onclick="pay('${x.id}')">✓ Pagar</button>`:''}<button class="mini soft" onclick="editMove('${x.id}')">Editar</button><button class="mini red" onclick="delMove('${x.id}')">Eliminar</button></div></td></tr>`}).join('');
+}
+function renderPending(){
+ const rows=moves.filter(x=>monthOf(x.date)===selectedMonth()&&x.type==='cuenta'&&x.status!=='pagado').sort((a,b)=>(a.dueDate||'9999').localeCompare(b.dueDate||'9999'));
+ $('pendingList').innerHTML=rows.length?rows.map(x=>`<div class="summary"><span><strong>${esc(x.name)}</strong><br><small class="muted">${x.dueDate?'Vence '+x.dueDate:'Sin vencimiento'}</small></span><strong>${money(x.amount)}</strong></div>`).join(''):'<div class="muted">Todo pagado 🎉</div>';
+}
+function renderFixed(){
+ $('fixedList').innerHTML=fixed.filter(x=>x.active).map(x=>`<div class="summary"><span>${esc(x.name)}</span><strong>${money(x.amount)}</strong></div>`).join('');
+}
+function save(){
+ if(busy)return;busy=true;setSync('','Guardando…');
+ google.script.run.withSuccessHandler(r=>{busy=false;if(r&&r.ok){lastUpdatedAt=r.updatedAt||'';setSync('ok','Sincronizado');render()}else setSync('err','Error al guardar')})
+ .withFailureHandler(()=>{busy=false;setSync('err','Error al guardar')})
+ .saveCloudData({fixed,moves});
+}
+function pull(show=false){
+ if(busy)return;if(show)setSync('','Actualizando…');
+ google.script.run.withSuccessHandler(r=>{
+   if(r&&r.ok){
+     if(r.data){fixed=r.data.fixed||ORIGINAL_FIXED;moves=r.data.moves||[];lastUpdatedAt=r.updatedAt||''}
+     else {fixed=ORIGINAL_FIXED;moves=[];generateMonth(true);return}
+     setSync('ok','Sincronizado');render();
+   } else setSync('err','Error de nube');
+ }).withFailureHandler(()=>setSync('err','Error de nube')).loadCloudData();
+}
+function generateMonth(silent=false){
+ const m=selectedMonth(), active=fixed.filter(x=>x.active);let added=0;
+ active.forEach(f=>{const key=f.id+'_'+m;if(!moves.some(x=>x.recurringKey===key)){moves.push({id:uid(),type:'cuenta',date:m+'-01',name:f.name,category:f.category,amount:Number(f.amount),status:'pendiente',dueDate:dueDateFor(m,f.dueDay),notes:'Gasto fijo mensual',fixedId:f.id,recurringKey:key});added++}})
+ if(added||silent)save(); else alert('Ese mes ya tiene cargados los gastos fijos.');
+}
+function pay(id){const x=moves.find(x=>x.id===id);if(x){x.status='pagado';save()}}
+function delMove(id){if(confirm('¿Eliminar este movimiento?')){moves=moves.filter(x=>x.id!==id);save()}}
+function newMove(){
+ $('moveForm').reset();$('moveId').value='';$('moveType').value='gasto';$('moveDate').value=today();$('moveCategory').value='Gastos extras';$('moveStatus').value='pagado';$('moveTitle').textContent='Nuevo movimiento';moveDialog.showModal();
+}
+function editMove(id){
+ const x=moves.find(x=>x.id===id);if(!x)return;$('moveId').value=x.id;$('moveType').value=x.type;$('moveDate').value=x.date;$('moveName').value=x.name;$('moveCategory').value=x.category;$('moveAmount').value=x.amount;$('moveStatus').value=x.status||'pagado';$('moveDue').value=x.dueDate||'';$('moveNotes').value=x.notes||'';$('moveTitle').textContent='Editar movimiento';moveDialog.showModal();
+}
+$('moveForm').addEventListener('submit',e=>{
+ e.preventDefault();const id=$('moveId').value||uid(),old=moves.find(x=>x.id===id)||{};
+ const obj={...old,id,type:$('moveType').value,date:$('moveDate').value,name:$('moveName').value.trim(),category:$('moveCategory').value.trim()||'Otros',amount:Number($('moveAmount').value),status:$('moveType').value==='ingreso'?'pagado':$('moveStatus').value,dueDate:$('moveDue').value,notes:$('moveNotes').value.trim()};
+ const i=moves.findIndex(x=>x.id===id);if(i>=0)moves[i]=obj;else moves.push(obj);moveDialog.close();save();
+});
+pull(true);
+setInterval(()=>{if(document.visibilityState==='visible'&&!busy)pull(false)},7000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pull(false)});
+</script>
+</body>
+</html>
